@@ -8,3 +8,9 @@ Enter your birthday and see how old you are in:
 -   Hours
 -   Minutes
 -   Seconds
+
+## Todo
+
+- [ ] Update time live
+- [ ] Share button
+- [ ] Publish to the web
