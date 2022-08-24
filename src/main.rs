@@ -2,14 +2,14 @@ use chrono::prelude::*;
 use yew::prelude::*;
 
 enum Msg {
-    UpdateName,
-    UpdateBirthday,
+    UpdateName(String),
+    UpdateBirthday(String),
 }
 
 #[derive(Default)]
 struct YourAge {
     name: String,
-    birthday: Option<Date<Local>>,
+    birthday: Option<DateTime<Local>>,
 }
 
 impl YourAge {
@@ -20,16 +20,16 @@ impl YourAge {
 
         let Some(birthday) = self.birthday;
         let duration = Local::now().signed_duration_since(birthday);
-        let years = duration.num_days() / 365;
-        let months = duration.num_days() / 30;
         let days = duration.num_days();
+        let years = days / 365;
+        let months = years * 12;
         let hours = duration.num_hours();
         let minutes = duration.num_minutes();
         let seconds = duration.num_seconds();
 
         html! {
             <>
-                <p>{ "Hello" } {self.name} { "!" }</p>
+                <h2>{ "Hello" } {self.name} { "!" }</h2>
 
                 <p>{ "You are:" }</p>
 
@@ -57,16 +57,28 @@ impl Component for YourAge {
         Default::default()
     }
 
+    fn update(self, _: &Context<Self>, msg: Msg) -> Self {
+        use Msg::*;
+
+        match msg {
+            UpdateName(name) => Self { name, ..self },
+            UpdateBirthday(birthday) => Self {
+                birthday: DateTime::parse(birthday),
+                ..self
+            },
+        }
+    }
+
     fn view(&self, ctx: &Context<Self>) -> Html {
         html! {
             <>
-                <p>{ "Type your name and birthday" }</p>
+                <h2>{ "Type your name and birthday" }</h2>
 
                 <label for="name">{ "Name" }</label>
-                <input name="name" />
+                <input name="name" onchange={ctx.link().callback(|evt| Msg::UpdateName(evt.target.value))} />
 
                 <label for="birthday">{ "Birthday" }</label>
-                <input type="date" name="birthday" />
+                <input type="date" name="birthday" onchange={ctx.link().callback(|evt| Msg::UpdateBirthday(evt.target.value))} />
 
                 {self.output()}
             </>
