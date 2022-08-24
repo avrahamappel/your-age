@@ -20,7 +20,7 @@ fn input_event_value(evt: Event) -> String {
 #[derive(Default)]
 struct YourAge {
     name: String,
-    birthday: Option<DateTime<Local>>,
+    birthday: Option<NaiveDate>,
 }
 
 impl YourAge {
@@ -30,7 +30,7 @@ impl YourAge {
         }
 
         if let Some(birthday) = self.birthday {
-            let duration = Local::now().signed_duration_since(birthday);
+            let duration = Local::today().naive_local().signed_duration_since(birthday);
             let days = duration.num_days();
             let years = days / 365;
             let months = years * 12;
@@ -40,21 +40,21 @@ impl YourAge {
 
             html! {
                 <>
-                    <h2>{ "Hello" } {&self.name} { "!" }</h2>
+                    <h2>{ "Hello " } {&self.name} { "!" }</h2>
 
                     <p>{ "You are:" }</p>
 
-                    <p>{years} { "years old" }</p>
+                    <p><b>{years}</b> { " years old" }</p>
 
-                    <p>{months} { "months old" }</p>
+                    <p><b>{months}</b> { " months old" }</p>
 
-                    <p>{days} { "days old" }</p>
+                    <p><b>{days}</b> { " days old" }</p>
 
-                    <p>{hours} { "hours old" }</p>
+                    <p><b>{hours}</b> { " hours old" }</p>
 
-                    <p>{minutes} { "minutes old" }</p>
+                    <p><b>{minutes}</b> { " minutes old" }</p>
 
-                    <p>{seconds} { "seconds old" }</p>
+                    <p><b>{seconds}</b> { " seconds old" }</p>
                 </>
             }
         } else {
@@ -80,7 +80,7 @@ impl Component for YourAge {
                 // debug
                 log!(&birthday);
 
-                self.birthday = Local.datetime_from_str(&birthday, "").ok()
+                self.birthday = NaiveDate::parse_from_str(&birthday, "%F").ok()
             }
         }
 
@@ -102,6 +102,8 @@ impl Component for YourAge {
 
                 <label for="name">{ "Name" }</label>
                 <input name="name" onchange={name_callback} />
+
+                <br />
 
                 <label for="birthday">{ "Birthday" }</label>
                 <input type="date" name="birthday" onchange={birthday_callback} />
