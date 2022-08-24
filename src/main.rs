@@ -1,9 +1,20 @@
 use chrono::prelude::*;
+use gloo_console::log;
+use wasm_bindgen::JsCast;
+use web_sys::HtmlInputElement;
 use yew::prelude::*;
 
 enum Msg {
     UpdateName(String),
     UpdateBirthday(String),
+}
+
+fn input_event_value(evt: Event) -> String {
+    evt.target()
+        .unwrap()
+        .dyn_into::<HtmlInputElement>()
+        .unwrap()
+        .value()
 }
 
 #[derive(Default)]
@@ -57,28 +68,40 @@ impl Component for YourAge {
         Default::default()
     }
 
-    fn update(self, _: &Context<Self>, msg: Msg) -> Self {
+    fn update(&mut self, _: &Context<Self>, msg: Msg) -> bool {
         use Msg::*;
 
         match msg {
-            UpdateName(name) => Self { name, ..self },
-            UpdateBirthday(birthday) => Self {
-                birthday: DateTime::parse(birthday),
-                ..self
-            },
+            UpdateName(name) => self.name = name,
+            UpdateBirthday(birthday) => {
+                // debug
+                log!(&birthday);
+
+                self.birthday = Local.datetime_from_str(&birthday, "").ok()
+            }
         }
+
+        true
     }
 
     fn view(&self, ctx: &Context<Self>) -> Html {
+        let name_callback = ctx
+            .link()
+            .callback(|evt: Event| Msg::UpdateName(input_event_value(evt)));
+
+        let birthday_callback = ctx
+            .link()
+            .callback(|evt: Event| Msg::UpdateBirthday(input_event_value(evt)));
+
         html! {
             <>
                 <h2>{ "Type your name and birthday" }</h2>
 
                 <label for="name">{ "Name" }</label>
-                <input name="name" onchange={ctx.link().callback(|evt| Msg::UpdateName(evt.target.value))} />
+                <input name="name" onchange={name_callback} />
 
                 <label for="birthday">{ "Birthday" }</label>
-                <input type="date" name="birthday" onchange={ctx.link().callback(|evt| Msg::UpdateBirthday(evt.target.value))} />
+                <input type="date" name="birthday" onchange={birthday_callback} />
 
                 {self.output()}
             </>

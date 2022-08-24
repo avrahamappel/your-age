@@ -555,5 +555,8 @@ name = "your-age"
 version = "0.1.0"
 dependencies = [
  "chrono",
+ "gloo-console",
+ "wasm-bindgen",
+ "web-sys",
  "yew",
 ]
