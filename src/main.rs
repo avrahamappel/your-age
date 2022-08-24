@@ -25,37 +25,40 @@ struct YourAge {
 
 impl YourAge {
     fn output(&self) -> Html {
-        if self.name.len() == 0 && self.birthday.is_none() {
+        if self.name.is_empty() {
             return html! {};
         }
 
-        let Some(birthday) = self.birthday;
-        let duration = Local::now().signed_duration_since(birthday);
-        let days = duration.num_days();
-        let years = days / 365;
-        let months = years * 12;
-        let hours = duration.num_hours();
-        let minutes = duration.num_minutes();
-        let seconds = duration.num_seconds();
+        if let Some(birthday) = self.birthday {
+            let duration = Local::now().signed_duration_since(birthday);
+            let days = duration.num_days();
+            let years = days / 365;
+            let months = years * 12;
+            let hours = duration.num_hours();
+            let minutes = duration.num_minutes();
+            let seconds = duration.num_seconds();
 
-        html! {
-            <>
-                <h2>{ "Hello" } {self.name} { "!" }</h2>
+            html! {
+                <>
+                    <h2>{ "Hello" } {&self.name} { "!" }</h2>
 
-                <p>{ "You are:" }</p>
+                    <p>{ "You are:" }</p>
 
-                <p>{years} { "years old" }</p>
+                    <p>{years} { "years old" }</p>
 
-                <p>{months} { "months old" }</p>
+                    <p>{months} { "months old" }</p>
 
-                <p>{days} { "days old" }</p>
+                    <p>{days} { "days old" }</p>
 
-                <p>{hours} { "hours old" }</p>
+                    <p>{hours} { "hours old" }</p>
 
-                <p>{minutes} { "minutes old" }</p>
+                    <p>{minutes} { "minutes old" }</p>
 
-                <p>{seconds} { "seconds old" }</p>
-            </>
+                    <p>{seconds} { "seconds old" }</p>
+                </>
+            }
+        } else {
+            html! { <p><i>{ "Enter a valid birthday" }</i></p> }
         }
     }
 }
