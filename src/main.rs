@@ -1,5 +1,4 @@
 use chrono::prelude::*;
-use gloo_console::log;
 use wasm_bindgen::JsCast;
 use web_sys::HtmlInputElement;
 use yew::prelude::*;
@@ -17,6 +16,52 @@ fn input_event_value(evt: Event) -> String {
         .value()
 }
 
+/// Insert separators in a number string.
+/// https://stackoverflow.com/a/58437629
+fn insert_separators(num_str: String) -> String {
+    let mut s = Vec::with_capacity(num_str.len() + (num_str.len() / 3));
+    let it = num_str.chars().rev().enumerate();
+
+    for (i, ch) in it {
+        if i != 0 && i % 3 == 0 {
+            s.push(',');
+        }
+        s.push(ch);
+    }
+
+    s.iter().rev().collect()
+}
+
+trait WithSeparators {
+    fn with_separators(self) -> String
+    where
+        Self: Sized;
+}
+
+impl WithSeparators for String {
+    fn with_separators(self) -> Self {
+        insert_separators(self)
+    }
+}
+
+macro_rules! age_html {
+    ($age:ident) => {{
+        let mut label = stringify!($age).to_string();
+
+        // Depluralize if necessary
+        if $age == "1" {
+            label.pop();
+        }
+
+        html! {
+            <>
+                <b>{ $age }</b>
+                { format!(" {} old", label) }
+            </>
+        }
+    }};
+}
+
 #[derive(Default)]
 struct YourAge {
     name: String,
@@ -24,6 +69,7 @@ struct YourAge {
 }
 
 impl YourAge {
+    /// Format the output of the age as Html
     fn output(&self) -> Html {
         if self.name.is_empty() {
             return html! {};
@@ -32,11 +78,12 @@ impl YourAge {
         if let Some(birthday) = self.birthday {
             let duration = Local::today().naive_local().signed_duration_since(birthday);
             let days = duration.num_days();
-            let years = days / 365;
-            let months = years * 12;
-            let hours = duration.num_hours();
-            let minutes = duration.num_minutes();
-            let seconds = duration.num_seconds();
+            let years = (days / 365).to_string().with_separators();
+            let months = (days / 30).to_string().with_separators();
+            let hours = duration.num_hours().to_string().with_separators();
+            let minutes = duration.num_minutes().to_string().with_separators();
+            let seconds = duration.num_seconds().to_string().with_separators();
+            let days = days.to_string().with_separators();
 
             html! {
                 <>
@@ -44,17 +91,12 @@ impl YourAge {
 
                     <p>{ "You are:" }</p>
 
-                    <p><b>{years}</b> { " years old" }</p>
-
-                    <p><b>{months}</b> { " months old" }</p>
-
-                    <p><b>{days}</b> { " days old" }</p>
-
-                    <p><b>{hours}</b> { " hours old" }</p>
-
-                    <p><b>{minutes}</b> { " minutes old" }</p>
-
-                    <p><b>{seconds}</b> { " seconds old" }</p>
+                    <p>{ age_html!(years) }</p>
+                    <p>{ age_html!(months) }</p>
+                    <p>{ age_html!(days) }</p>
+                    <p>{ age_html!(hours) }</p>
+                    <p>{ age_html!(minutes) }</p>
+                    <p>{ age_html!(seconds) }</p>
                 </>
             }
         } else {
@@ -77,9 +119,6 @@ impl Component for YourAge {
         match msg {
             UpdateName(name) => self.name = name,
             UpdateBirthday(birthday) => {
-                // debug
-                log!(&birthday);
-
                 self.birthday = NaiveDate::parse_from_str(&birthday, "%F").ok()
             }
         }
