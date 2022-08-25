@@ -1,8 +1,15 @@
 /// Insert separators in a number string.
 fn insert_separators(num_str: String) -> String {
-    let rev = num_str.chars().rev().collect::<Vec<_>>();
-    let chunks = rev.chunks(3).collect::<Vec<_>>();
-    chunks.join([','].as_slice()).iter().rev().collect()
+    num_str
+        .chars()
+        .rev()
+        .collect::<Vec<_>>()
+        .chunks(3)
+        .collect::<Vec<_>>()
+        .join([','].as_slice())
+        .into_iter()
+        .rev()
+        .collect()
 }
 
 pub trait WithSeparators {
