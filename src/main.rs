@@ -3,6 +3,10 @@ use wasm_bindgen::JsCast;
 use web_sys::HtmlInputElement;
 use yew::prelude::*;
 
+mod separators;
+
+use separators::WithSeparators;
+
 enum Msg {
     UpdateName(String),
     UpdateBirthday(String),
@@ -14,34 +18,6 @@ fn input_event_value(evt: Event) -> String {
         .dyn_into::<HtmlInputElement>()
         .unwrap()
         .value()
-}
-
-/// Insert separators in a number string.
-/// https://stackoverflow.com/a/58437629
-fn insert_separators(num_str: String) -> String {
-    let mut s = Vec::with_capacity(num_str.len() + (num_str.len() / 3));
-    let it = num_str.chars().rev().enumerate();
-
-    for (i, ch) in it {
-        if i != 0 && i % 3 == 0 {
-            s.push(',');
-        }
-        s.push(ch);
-    }
-
-    s.iter().rev().collect()
-}
-
-trait WithSeparators {
-    fn with_separators(self) -> String
-    where
-        Self: Sized;
-}
-
-impl WithSeparators for String {
-    fn with_separators(self) -> Self {
-        insert_separators(self)
-    }
 }
 
 macro_rules! age_html {
