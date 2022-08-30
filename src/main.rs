@@ -1,4 +1,5 @@
 use chrono::prelude::*;
+use gloo_timers::callback::Interval;
 use wasm_bindgen::JsCast;
 use web_sys::HtmlInputElement;
 use yew::prelude::*;
@@ -8,6 +9,7 @@ mod separators;
 use separators::WithSeparators;
 
 enum Msg {
+    Tick,
     UpdateName(String),
     UpdateBirthday(String),
 }
@@ -38,10 +40,15 @@ macro_rules! age_html {
     }};
 }
 
-#[derive(Default)]
+fn current_time() -> NaiveDateTime {
+    Local::now().naive_local()
+}
+
 struct YourAge {
     name: String,
     birthday: Option<NaiveDate>,
+    current_time: NaiveDateTime,
+    _interval: Interval,
 }
 
 impl YourAge {
@@ -52,7 +59,9 @@ impl YourAge {
         }
 
         if let Some(birthday) = self.birthday {
-            let duration = Local::today().naive_local().signed_duration_since(birthday);
+            let duration = self
+                .current_time
+                .signed_duration_since(birthday.and_hms(0, 0, 0));
             let days = duration.num_days();
             let years = (days / 365).to_string().with_separators();
             let months = (days / 30).to_string().with_separators();
@@ -85,14 +94,25 @@ impl Component for YourAge {
     type Properties = ();
     type Message = Msg;
 
-    fn create(_: &Context<Self>) -> Self {
-        Default::default()
+    fn create(ctx: &Context<Self>) -> Self {
+        let _interval = {
+            let link = ctx.link().clone();
+            Interval::new(1000, move || link.send_message(Msg::Tick))
+        };
+
+        Self {
+            name: String::new(),
+            birthday: None,
+            current_time: current_time(),
+            _interval,
+        }
     }
 
     fn update(&mut self, _: &Context<Self>, msg: Msg) -> bool {
         use Msg::*;
 
         match msg {
+            Tick => self.current_time = current_time(),
             UpdateName(name) => self.name = name,
             UpdateBirthday(birthday) => {
                 self.birthday = NaiveDate::parse_from_str(&birthday, "%F").ok()

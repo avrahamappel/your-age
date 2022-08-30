@@ -11,6 +11,6 @@ Enter your birthday and see how old you are in:
 
 ## Todo
 
-- [ ] Update time live
-- [ ] Share button
-- [ ] Publish to the web
+-   [x] Update time live
+-   [ ] Share button
+-   [ ] Publish to the web
