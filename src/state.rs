@@ -3,7 +3,7 @@ use std::rc::Rc;
 use chrono::{Local, NaiveDate, NaiveDateTime};
 use yew::Reducible;
 
-pub enum Msg {
+pub enum Action {
     Tick,
     UpdateName(String),
     UpdateBirthday(String),
@@ -17,10 +17,10 @@ pub struct State {
 }
 
 impl Reducible for State {
-    type Action = Msg;
+    type Action = Action;
 
     fn reduce(self: Rc<Self>, action: Self::Action) -> Rc<Self> {
-        use Msg::*;
+        use Action::*;
 
         let state = match Rc::try_unwrap(self) {
             Ok(state) => state,

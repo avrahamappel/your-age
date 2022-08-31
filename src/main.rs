@@ -7,7 +7,7 @@ mod separators;
 mod state;
 
 use separators::WithSeparators;
-use state::{Msg, State};
+use state::{Action, State};
 
 fn input_event_value(evt: Event) -> String {
     evt.target()
@@ -19,12 +19,14 @@ fn input_event_value(evt: Event) -> String {
 
 macro_rules! age_html {
     ($age:ident) => {{
-        let mut label = stringify!($age).to_string();
+        let label = stringify!($age).to_string();
 
         // Depluralize if necessary
-        if $age == "1" {
-            label.pop();
-        }
+        let label = if $age == "1" {
+            &label[..label.len() - 1]
+        } else {
+            &label
+        };
 
         html! {
             <>
@@ -33,6 +35,35 @@ macro_rules! age_html {
             </>
         }
     }};
+}
+
+/// Input form for entering data
+fn input(state: &UseReducerHandle<State>) -> Html {
+    let name_callback = {
+        let state = state.clone();
+        Callback::from(move |evt: Event| state.dispatch(Action::UpdateName(input_event_value(evt))))
+    };
+
+    let birthday_callback = {
+        let state = state.clone();
+        Callback::from(move |evt: Event| {
+            state.dispatch(Action::UpdateBirthday(input_event_value(evt)))
+        })
+    };
+
+    html! {
+        <>
+            <h2>{ "Type your name and birthday" }</h2>
+
+            <label for="name">{ "Name" }</label>
+            <input name="name" onchange={name_callback} />
+
+            <br />
+
+            <label for="birthday">{ "Birthday" }</label>
+            <input type="date" name="birthday" onchange={birthday_callback} />
+        </>
+    }
 }
 
 /// Format the output of the age as Html
@@ -78,35 +109,15 @@ fn your_age() -> Html {
 
     let _interval = use_state({
         let state = state.clone();
-        move || Interval::new(1000, move || state.dispatch(Msg::Tick))
+        move || Interval::new(1000, move || state.dispatch(Action::Tick))
     });
 
-    let name_callback = {
-        let state = state.clone();
-        Callback::from(move |evt: Event| state.dispatch(Msg::UpdateName(input_event_value(evt))))
-    };
-
-    let birthday_callback = {
-        let state = state.clone();
-        Callback::from(move |evt: Event| {
-            state.dispatch(Msg::UpdateBirthday(input_event_value(evt)))
-        })
-    };
-
-    let output = output(&*state);
+    let input = input(&state);
+    let output = output(&state);
 
     html! {
         <>
-            <h2>{ "Type your name and birthday" }</h2>
-
-            <label for="name">{ "Name" }</label>
-            <input name="name" onchange={name_callback} />
-
-            <br />
-
-            <label for="birthday">{ "Birthday" }</label>
-            <input type="date" name="birthday" onchange={birthday_callback} />
-
+            {input}
             {output}
         </>
     }
