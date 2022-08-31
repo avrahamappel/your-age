@@ -1,3 +1,5 @@
+use std::rc::Rc;
+
 use chrono::prelude::*;
 use gloo_timers::callback::Interval;
 use wasm_bindgen::JsCast;
@@ -44,11 +46,11 @@ fn current_time() -> NaiveDateTime {
     Local::now().naive_local()
 }
 
+#[derive(Clone)]
 struct State {
     name: String,
     birthday: Option<NaiveDate>,
     current_time: NaiveDateTime,
-    _interval: Interval,
 }
 
 /// Format the output of the age as Html
@@ -91,33 +93,47 @@ fn output(state: &State) -> Html {
 impl Reducible for State {
     type Action = Msg;
 
-    fn reduce(self: std::rc::Rc<Self>, action: Self::Action) -> std::rc::Rc<Self> {
+    fn reduce(self: Rc<Self>, action: Self::Action) -> Rc<Self> {
         use Msg::*;
 
-        match action {
-            Tick => self.current_time = current_time(),
-            UpdateName(name) => self.name = name,
-            UpdateBirthday(birthday) => {
-                self.birthday = NaiveDate::parse_from_str(&birthday, "%F").ok()
-            }
-        }
+        let state = match Rc::try_unwrap(self) {
+            Ok(state) => state,
+            Err(rc) => (*rc).clone(),
+        };
 
-        self
+        match action {
+            Tick => state.update_time(),
+            UpdateName(name) => state.update_name(name),
+            UpdateBirthday(birthday) => state.update_birthday(birthday),
+        }
+        .into()
     }
 }
 
 impl State {
     fn new() -> Self {
-        let _interval = {
-            let link = ctx.link().clone();
-            Interval::new(1000, move || link.send_message(Msg::Tick))
-        };
-
         Self {
             name: String::new(),
             birthday: None,
             current_time: current_time(),
-            _interval,
+        }
+    }
+
+    fn update_time(self) -> Self {
+        Self {
+            current_time: current_time(),
+            ..self
+        }
+    }
+
+    fn update_name(self, name: String) -> Self {
+        Self { name, ..self }
+    }
+
+    fn update_birthday(self, birthday: String) -> Self {
+        Self {
+            birthday: NaiveDate::parse_from_str(&birthday, "%F").ok(),
+            ..self
         }
     }
 }
@@ -126,10 +142,22 @@ impl State {
 fn your_age() -> Html {
     let state = use_reducer(State::new);
 
-    let name_callback = Callback::from(|evt: Event| Msg::UpdateName(input_event_value(evt)));
+    let _interval = use_state({
+        let state = state.clone();
+        move || Interval::new(1000, move || state.dispatch(Msg::Tick))
+    });
 
-    let birthday_callback =
-        Callback::from(|evt: Event| Msg::UpdateBirthday(input_event_value(evt)));
+    let name_callback = {
+        let state = state.clone();
+        Callback::from(move |evt: Event| state.dispatch(Msg::UpdateName(input_event_value(evt))))
+    };
+
+    let birthday_callback = {
+        let state = state.clone();
+        Callback::from(move |evt: Event| {
+            state.dispatch(Msg::UpdateBirthday(input_event_value(evt)))
+        })
+    };
 
     let output = output(&*state);
 
