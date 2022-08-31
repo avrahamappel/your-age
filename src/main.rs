@@ -1,20 +1,13 @@
-use std::rc::Rc;
-
-use chrono::prelude::*;
 use gloo_timers::callback::Interval;
 use wasm_bindgen::JsCast;
 use web_sys::HtmlInputElement;
 use yew::prelude::*;
 
 mod separators;
+mod state;
 
 use separators::WithSeparators;
-
-enum Msg {
-    Tick,
-    UpdateName(String),
-    UpdateBirthday(String),
-}
+use state::{Msg, State};
 
 fn input_event_value(evt: Event) -> String {
     evt.target()
@@ -40,17 +33,6 @@ macro_rules! age_html {
             </>
         }
     }};
-}
-
-fn current_time() -> NaiveDateTime {
-    Local::now().naive_local()
-}
-
-#[derive(Clone)]
-struct State {
-    name: String,
-    birthday: Option<NaiveDate>,
-    current_time: NaiveDateTime,
 }
 
 /// Format the output of the age as Html
@@ -87,54 +69,6 @@ fn output(state: &State) -> Html {
         }
     } else {
         html! { <p><i>{ "Enter a valid birthday" }</i></p> }
-    }
-}
-
-impl Reducible for State {
-    type Action = Msg;
-
-    fn reduce(self: Rc<Self>, action: Self::Action) -> Rc<Self> {
-        use Msg::*;
-
-        let state = match Rc::try_unwrap(self) {
-            Ok(state) => state,
-            Err(rc) => (*rc).clone(),
-        };
-
-        match action {
-            Tick => state.update_time(),
-            UpdateName(name) => state.update_name(name),
-            UpdateBirthday(birthday) => state.update_birthday(birthday),
-        }
-        .into()
-    }
-}
-
-impl State {
-    fn new() -> Self {
-        Self {
-            name: String::new(),
-            birthday: None,
-            current_time: current_time(),
-        }
-    }
-
-    fn update_time(self) -> Self {
-        Self {
-            current_time: current_time(),
-            ..self
-        }
-    }
-
-    fn update_name(self, name: String) -> Self {
-        Self { name, ..self }
-    }
-
-    fn update_birthday(self, birthday: String) -> Self {
-        Self {
-            birthday: NaiveDate::parse_from_str(&birthday, "%F").ok(),
-            ..self
-        }
     }
 }
 
