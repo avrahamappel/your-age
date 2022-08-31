@@ -44,57 +44,70 @@ fn current_time() -> NaiveDateTime {
     Local::now().naive_local()
 }
 
-struct YourAge {
+struct State {
     name: String,
     birthday: Option<NaiveDate>,
     current_time: NaiveDateTime,
     _interval: Interval,
 }
 
-impl YourAge {
-    /// Format the output of the age as Html
-    fn output(&self) -> Html {
-        if self.name.is_empty() {
-            return html! {};
+/// Format the output of the age as Html
+fn output(state: &State) -> Html {
+    if state.name.is_empty() {
+        return html! {};
+    }
+
+    if let Some(birthday) = state.birthday {
+        let duration = state
+            .current_time
+            .signed_duration_since(birthday.and_hms(0, 0, 0));
+        let days = duration.num_days();
+        let years = (days / 365).to_string().with_separators();
+        let months = (days / 30).to_string().with_separators();
+        let hours = duration.num_hours().to_string().with_separators();
+        let minutes = duration.num_minutes().to_string().with_separators();
+        let seconds = duration.num_seconds().to_string().with_separators();
+        let days = days.to_string().with_separators();
+
+        html! {
+            <>
+                <h2>{ "Hello " } {&state.name} { "!" }</h2>
+
+                <p>{ "You are:" }</p>
+
+                <p>{ age_html!(years) }</p>
+                <p>{ age_html!(months) }</p>
+                <p>{ age_html!(days) }</p>
+                <p>{ age_html!(hours) }</p>
+                <p>{ age_html!(minutes) }</p>
+                <p>{ age_html!(seconds) }</p>
+            </>
         }
-
-        if let Some(birthday) = self.birthday {
-            let duration = self
-                .current_time
-                .signed_duration_since(birthday.and_hms(0, 0, 0));
-            let days = duration.num_days();
-            let years = (days / 365).to_string().with_separators();
-            let months = (days / 30).to_string().with_separators();
-            let hours = duration.num_hours().to_string().with_separators();
-            let minutes = duration.num_minutes().to_string().with_separators();
-            let seconds = duration.num_seconds().to_string().with_separators();
-            let days = days.to_string().with_separators();
-
-            html! {
-                <>
-                    <h2>{ "Hello " } {&self.name} { "!" }</h2>
-
-                    <p>{ "You are:" }</p>
-
-                    <p>{ age_html!(years) }</p>
-                    <p>{ age_html!(months) }</p>
-                    <p>{ age_html!(days) }</p>
-                    <p>{ age_html!(hours) }</p>
-                    <p>{ age_html!(minutes) }</p>
-                    <p>{ age_html!(seconds) }</p>
-                </>
-            }
-        } else {
-            html! { <p><i>{ "Enter a valid birthday" }</i></p> }
-        }
+    } else {
+        html! { <p><i>{ "Enter a valid birthday" }</i></p> }
     }
 }
 
-impl Component for YourAge {
-    type Properties = ();
-    type Message = Msg;
+impl Reducible for State {
+    type Action = Msg;
 
-    fn create(ctx: &Context<Self>) -> Self {
+    fn reduce(self: std::rc::Rc<Self>, action: Self::Action) -> std::rc::Rc<Self> {
+        use Msg::*;
+
+        match action {
+            Tick => self.current_time = current_time(),
+            UpdateName(name) => self.name = name,
+            UpdateBirthday(birthday) => {
+                self.birthday = NaiveDate::parse_from_str(&birthday, "%F").ok()
+            }
+        }
+
+        self
+    }
+}
+
+impl State {
+    fn new() -> Self {
         let _interval = {
             let link = ctx.link().clone();
             Interval::new(1000, move || link.send_message(Msg::Tick))
@@ -107,45 +120,33 @@ impl Component for YourAge {
             _interval,
         }
     }
+}
 
-    fn update(&mut self, _: &Context<Self>, msg: Msg) -> bool {
-        use Msg::*;
+#[function_component(YourAge)]
+fn your_age() -> Html {
+    let state = use_reducer(State::new);
 
-        match msg {
-            Tick => self.current_time = current_time(),
-            UpdateName(name) => self.name = name,
-            UpdateBirthday(birthday) => {
-                self.birthday = NaiveDate::parse_from_str(&birthday, "%F").ok()
-            }
-        }
+    let name_callback = Callback::from(|evt: Event| Msg::UpdateName(input_event_value(evt)));
 
-        true
-    }
+    let birthday_callback =
+        Callback::from(|evt: Event| Msg::UpdateBirthday(input_event_value(evt)));
 
-    fn view(&self, ctx: &Context<Self>) -> Html {
-        let name_callback = ctx
-            .link()
-            .callback(|evt: Event| Msg::UpdateName(input_event_value(evt)));
+    let output = output(&*state);
 
-        let birthday_callback = ctx
-            .link()
-            .callback(|evt: Event| Msg::UpdateBirthday(input_event_value(evt)));
+    html! {
+        <>
+            <h2>{ "Type your name and birthday" }</h2>
 
-        html! {
-            <>
-                <h2>{ "Type your name and birthday" }</h2>
+            <label for="name">{ "Name" }</label>
+            <input name="name" onchange={name_callback} />
 
-                <label for="name">{ "Name" }</label>
-                <input name="name" onchange={name_callback} />
+            <br />
 
-                <br />
+            <label for="birthday">{ "Birthday" }</label>
+            <input type="date" name="birthday" onchange={birthday_callback} />
 
-                <label for="birthday">{ "Birthday" }</label>
-                <input type="date" name="birthday" onchange={birthday_callback} />
-
-                {self.output()}
-            </>
-        }
+            {output}
+        </>
     }
 }
 
