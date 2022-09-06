@@ -1,15 +1,18 @@
+#[derive(Debug)]
 struct IntersperseChunks<I: Iterator> {
     inner: I,
-    item: I::Item,
+    buffer: Option<I::Item>,
+    separator: I::Item,
     count: usize,
     chunk_length: usize,
 }
 
 impl<I: Iterator> IntersperseChunks<I> {
-    fn new(inner: I, item: I::Item, chunk_length: usize) -> Self {
+    fn new(inner: I, separator: I::Item, chunk_length: usize) -> Self {
         Self {
             inner,
-            item,
+            buffer: None,
+            separator,
             chunk_length,
             count: 0,
         }
@@ -18,19 +21,29 @@ impl<I: Iterator> IntersperseChunks<I> {
 
 impl<I> Iterator for IntersperseChunks<I>
 where
-    <I as Iterator>::Item: Clone,
-    I: Iterator,
+    <I as Iterator>::Item: Clone + std::fmt::Debug,
+    I: Iterator + std::fmt::Debug,
 {
     type Item = I::Item;
 
     fn next(&mut self) -> Option<Self::Item> {
-        if self.count == self.chunk_length {
-            self.count = 0;
-            Some(self.item.clone())
-        } else {
+        if let Some(item) = &self.buffer {
+            let item = item.clone();
+            self.buffer = None;
             self.count += 1;
-            self.inner.next()
+            return Some(item);
         }
+
+        let item = self.inner.next();
+
+        if self.count == self.chunk_length && item.is_some() {
+            self.count = 0;
+            self.buffer = item;
+            return Some(self.separator.clone());
+        }
+
+        self.count += 1;
+        item
     }
 }
 
