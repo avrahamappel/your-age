@@ -41,14 +41,11 @@ fn your_age() -> Html {
         })
     };
 
-    let duration = match state.birthday {
-        Some(birthday) => Some(
-            state
-                .current_time
-                .signed_duration_since(birthday.and_hms(0, 0, 0)),
-        ),
-        None => None,
-    };
+    let duration = state.birthday.map(|birthday| {
+        state
+            .current_time
+            .signed_duration_since(birthday.and_hms(0, 0, 0))
+    });
 
     let name = state.name.clone();
 
