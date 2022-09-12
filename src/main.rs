@@ -3,9 +3,11 @@ use wasm_bindgen::JsCast;
 use web_sys::HtmlInputElement;
 use yew::prelude::*;
 
+mod input;
 mod separators;
 mod state;
 
+use input::Input;
 use separators::WithSeparators;
 use state::{Action, State};
 
@@ -35,35 +37,6 @@ macro_rules! age_html {
             </>
         }
     }};
-}
-
-/// Input form for entering data
-fn input(state: &UseReducerHandle<State>) -> Html {
-    let name_callback = {
-        let state = state.clone();
-        Callback::from(move |evt: Event| state.dispatch(Action::UpdateName(input_event_value(evt))))
-    };
-
-    let birthday_callback = {
-        let state = state.clone();
-        Callback::from(move |evt: Event| {
-            state.dispatch(Action::UpdateBirthday(input_event_value(evt)))
-        })
-    };
-
-    html! {
-        <>
-            <h2>{ "Type your name and birthday" }</h2>
-
-            <label for="name">{ "Name" }</label>
-            <input name="name" onchange={name_callback} />
-
-            <br />
-
-            <label for="birthday">{ "Birthday" }</label>
-            <input type="date" name="birthday" onchange={birthday_callback} />
-        </>
-    }
 }
 
 /// Format the output of the age as Html
@@ -112,12 +85,23 @@ fn your_age() -> Html {
         move || Interval::new(1000, move || state.dispatch(Action::Tick))
     });
 
-    let input = input(&state);
+    let name_callback = {
+        let state = state.clone();
+        Callback::from(move |evt: Event| state.dispatch(Action::UpdateName(input_event_value(evt))))
+    };
+
+    let birthday_callback = {
+        let state = state.clone();
+        Callback::from(move |evt: Event| {
+            state.dispatch(Action::UpdateBirthday(input_event_value(evt)))
+        })
+    };
+
     let output = output(&state);
 
     html! {
         <>
-            {input}
+            <Input {name_callback} {birthday_callback} />
             {output}
         </>
     }
