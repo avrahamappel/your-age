@@ -1,7 +1,21 @@
 use std::rc::Rc;
 
 use chrono::{Local, NaiveDate, NaiveDateTime};
-use yew::Reducible;
+use gloo_timers::callback::Interval;
+use wasm_bindgen::JsCast;
+use web_sys::HtmlInputElement;
+use yew::prelude::*;
+
+use crate::input::Input;
+use crate::output::Output;
+
+fn input_event_value(evt: Event) -> String {
+    evt.target()
+        .unwrap()
+        .dyn_into::<HtmlInputElement>()
+        .unwrap()
+        .value()
+}
 
 pub enum Action {
     Tick,
@@ -65,5 +79,46 @@ impl State {
             birthday: NaiveDate::parse_from_str(&birthday, "%F").ok(),
             ..self
         }
+    }
+}
+
+#[function_component(YourAge)]
+pub fn your_age() -> Html {
+    let state = use_reducer(State::new);
+
+    // TODO Add a hook here or in state (I was going to combine state and this component anyway)
+    // that will push the birthday and name to the URL query
+    // Later we can use that to implement a share button
+
+    let _interval = use_state({
+        let state = state.clone();
+        move || Interval::new(1000, move || state.dispatch(Action::Tick))
+    });
+
+    let name_callback = {
+        let state = state.clone();
+        Callback::from(move |evt: Event| state.dispatch(Action::UpdateName(input_event_value(evt))))
+    };
+
+    let birthday_callback = {
+        let state = state.clone();
+        Callback::from(move |evt: Event| {
+            state.dispatch(Action::UpdateBirthday(input_event_value(evt)))
+        })
+    };
+
+    let duration = state.birthday.map(|birthday| {
+        state
+            .current_time
+            .signed_duration_since(birthday.and_hms(0, 0, 0))
+    });
+
+    let name = state.name.clone();
+
+    html! {
+        <>
+            <Input {name_callback} {birthday_callback} />
+            <Output {name} {duration} />
+        </>
     }
 }
