@@ -86,8 +86,7 @@ impl State {
 pub fn your_age() -> Html {
     let state = use_reducer(State::new);
 
-    // TODO Add a hook here or in state (I was going to combine state and this component anyway)
-    // that will push the birthday and name to the URL query
+    // TODO Add a hook here that will push the birthday and name to the URL query
     // Later we can use that to implement a share button
 
     let _interval = use_state({

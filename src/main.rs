@@ -1,9 +1,9 @@
 mod input;
 mod output;
 mod separators;
-mod state;
+mod your_age;
 
-use state::YourAge;
+use your_age::YourAge;
 
 fn main() {
     yew::start_app::<YourAge>();
