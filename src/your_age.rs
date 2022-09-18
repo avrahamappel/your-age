@@ -42,6 +42,26 @@ impl Reducible for QueryParams {
     }
 }
 
+impl From<String> for QueryParams {
+    fn from(query: String) -> Self {
+        // Location.search includes the leading `?` (at least in Chrome),
+        // but `parse` doesn't take that into account,
+        // so we have to strip it out ourselves
+        let without_q = &query.as_bytes()[1..];
+        let query_map = form_urlencoded::parse(without_q).collect::<HashMap<_, _>>();
+
+        QueryParams {
+            name: query_map
+                .get("name")
+                .map(|name| name.to_string())
+                .unwrap_or_default(),
+            birthday: query_map
+                .get("birthday")
+                .and_then(|val| NaiveDate::parse_from_str(val, DATE_FORMAT).ok()),
+        }
+    }
+}
+
 impl Display for QueryParams {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         let mut serializer = Serializer::new(String::new());
@@ -59,6 +79,14 @@ impl Display for QueryParams {
 }
 
 impl QueryParams {
+    fn from_location_search() -> Self {
+        gloo_utils::window()
+            .location()
+            .search()
+            .expect_throw("Couldn't get query string")
+            .into()
+    }
+
     fn update_name(self, name: String) -> Self {
         QueryParams { name, ..self }.set_location_search()
     }
@@ -89,27 +117,9 @@ fn get_current_time() -> NaiveDateTime {
     Local::now().naive_local()
 }
 
-fn state_from_query() -> QueryParams {
-    let query = gloo_utils::window()
-        .location()
-        .search()
-        .expect_throw("Couldn't get query string");
-    let query_map = form_urlencoded::parse(query.as_bytes()).collect::<HashMap<_, _>>();
-
-    QueryParams {
-        name: query_map
-            .get("name")
-            .map(|name| name.to_string())
-            .unwrap_or_default(),
-        birthday: query_map
-            .get("birthday")
-            .and_then(|val| NaiveDate::parse_from_str(val, DATE_FORMAT).ok()),
-    }
-}
-
 #[function_component(YourAge)]
 pub fn your_age() -> Html {
-    let state = use_reducer(state_from_query);
+    let state = use_reducer(QueryParams::from_location_search);
     let current_time = use_state(get_current_time);
 
     // TODO Add a hook here that will push the birthday and name to the URL query
