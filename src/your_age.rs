@@ -8,6 +8,7 @@ use url::form_urlencoded::{self, Serializer};
 use wasm_bindgen::{JsCast, UnwrapThrowExt};
 use web_sys::HtmlInputElement;
 use yew::prelude::*;
+use yew::virtual_dom::AttrValue;
 
 use crate::input::Input;
 use crate::output::Output;
@@ -19,7 +20,7 @@ enum QueryParamsAction {
     UpdateBirthday(String),
 }
 
-#[derive(Clone)]
+#[derive(Clone, Debug)]
 struct QueryParams {
     name: String,
     birthday: Option<NaiveDate>,
@@ -44,11 +45,16 @@ impl Reducible for QueryParams {
 
 impl From<String> for QueryParams {
     fn from(query: String) -> Self {
-        // Location.search includes the leading `?` (at least in Chrome),
-        // but `parse` doesn't take that into account,
-        // so we have to strip it out ourselves
-        let without_q = &query.as_bytes()[1..];
-        let query_map = form_urlencoded::parse(without_q).collect::<HashMap<_, _>>();
+        let query = if !query.is_empty() && &query[0..1] == "?" {
+            // Location.search includes the leading `?` (at least in Chrome),
+            // but `parse` doesn't take that into account,
+            // so we have to strip it out ourselves
+            &query[1..]
+        } else {
+            &query
+        }
+        .as_bytes();
+        let query_map = form_urlencoded::parse(query).collect::<HashMap<_, _>>();
 
         QueryParams {
             name: query_map
@@ -148,12 +154,22 @@ pub fn your_age() -> Html {
         .birthday
         .map(|birthday| current_time.signed_duration_since(birthday.and_hms(0, 0, 0)));
 
-    let name = state.name.clone();
+    let input_name = AttrValue::from(state.name.clone());
+    let input_birthday = state
+        .birthday
+        .map(|b| b.format(DATE_FORMAT).to_string())
+        .unwrap_or_else(|| "".into());
+    let output_name = state.name.clone();
 
     html! {
         <>
-            <Input {name_callback} {birthday_callback} />
-            <Output {name} {duration} />
+            <Input
+                name={input_name}
+                {name_callback}
+                birthday={input_birthday}
+                {birthday_callback}
+            />
+            <Output name={output_name} {duration} />
         </>
     }
 }
