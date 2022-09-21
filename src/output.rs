@@ -2,6 +2,7 @@ use chrono::Duration;
 use yew::prelude::*;
 
 use crate::separators::WithSeparators;
+use crate::share::ShareButton;
 
 #[derive(Eq, PartialEq, Properties)]
 pub struct Props {
@@ -57,6 +58,11 @@ pub fn output(Props { duration, name }: &Props) -> Html {
                 <p>{ age_html!(hours) }</p>
                 <p>{ age_html!(minutes) }</p>
                 <p>{ age_html!(seconds) }</p>
+
+                <br>
+
+                <p>{ "Share this page" }</p>
+                <ShareButton></ShareButton>
             </>
         }
     } else {
