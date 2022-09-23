@@ -59,7 +59,7 @@ pub fn output(Props { duration, name }: &Props) -> Html {
                 <p>{ age_html!(minutes) }</p>
                 <p>{ age_html!(seconds) }</p>
 
-                <br>
+                <br />
 
                 <p>{ "Share this page" }</p>
                 <ShareButton></ShareButton>

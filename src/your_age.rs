@@ -128,8 +128,6 @@ pub fn your_age() -> Html {
     let state = use_reducer(QueryParams::from_location_search);
     let current_time = use_state(get_current_time);
 
-    // TODO implement a share button
-
     let _interval = use_state({
         let current_time = current_time.clone();
         move || Interval::new(1000, move || current_time.set(get_current_time()))
