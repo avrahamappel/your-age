@@ -43,7 +43,7 @@ pub fn share_button() -> Html {
     let title = urlencoding::encode(title);
 
     html! {
-        <div style="display:flex;">
+        <div>
             <a type="button" target="_blank" href={Share::Facebook.url(&url, &title)}>{ "Facebook" }</a>
             { "\u{00a0}|\u{00a0}" }
             <a type="button" target="_blank" href={Share::Twitter.url(&url, &title)}>{ "Twitter" }</a>
@@ -57,6 +57,10 @@ pub fn share_button() -> Html {
             <a type="button" target="_blank" href={Share::WhatsApp.url(&url, &title)}>{ "WhatsApp" }</a>
             { "\u{00a0}|\u{00a0}" }
             <a type="button" target="_blank" href={Share::Email.url(&url, &title)}>{ "Email" }</a>
+
+            <br />
+
+            <a href="https://github.com/avrahamappel/your-age">{ "Fork me on GitHub" }</a>
         </div>
     }
 }
