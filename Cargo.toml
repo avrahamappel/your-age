@@ -6,7 +6,7 @@ edition = "2021"
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
 [dependencies]
-chrono = "0.4.22"
+chrono = "0.4.23"
 gloo-console = "0.2.3"
 gloo-timers = "0.2.4"
 gloo-utils = "0.1.5"
