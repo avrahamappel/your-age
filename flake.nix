@@ -24,6 +24,10 @@
         };
 
         naersk' = pkgs.callPackage naersk { };
+
+        cargoDeps = pkgs.rustPlatform.importCargoLock {
+          lockFile = ./Cargo.lock;
+        };
       in
       {
         defaultPackage = naersk'.buildPackage {
@@ -31,10 +35,12 @@
         };
 
         devShell = pkgs.mkShell {
+          inherit cargoDeps;
           nativeBuildInputs = with pkgs; [
             bacon
             trunk
             rust-analyzer
+            rustPlatform.cargoSetupHook
             (pkgs.fenix.stable.withComponents [
               "cargo"
               "clippy"
