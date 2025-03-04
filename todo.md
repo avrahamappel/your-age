@@ -8,6 +8,7 @@
   - [ ] Erases whatever you type in the name field
   - [ ] Selecting bd using native picker reloads the page
   - [ ] No unit tests
+- [ ] Update dependencies
 - [ ] (Optionally) Upgrade to 2024 edition
 - [ ] Add Tauri https://tauri.app/start/frontend/trunk/
 - [ ] Deploy
