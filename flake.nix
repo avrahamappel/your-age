@@ -28,6 +28,31 @@
         cargoDeps = pkgs.rustPlatform.importCargoLock {
           lockFile = ./Cargo.lock;
         };
+
+        stableToolchain = (pkgs.fenix.stable.withComponents [
+          "cargo"
+          "clippy"
+          "rust-src"
+          "rustc"
+          "rustfmt"
+        ]);
+
+        wasmToolchain = pkgs.fenix.combine [
+          stableToolchain
+          (pkgs.fenix.fromToolchainFile {
+            dir = ./.;
+            sha256 = "sha256-AJ6LX/Q/Er9kS15bn9iflkUwcgYqRQxiOIL2ToVAXaU=";
+          })
+        ];
+
+        # A wrapper for Cargo that will always use deps in the Nix store
+        wrappedCargo = pkgs.writeShellScriptBin "cargo" ''
+          ${stableToolchain}/bin/cargo \
+            --offline \
+            --config 'source.crates-io.replace-with="cargoDeps"' \
+            --config 'source.cargoDeps.directory="${cargoDeps}"' \
+            "$@"
+        '';
       in
       {
         defaultPackage = naersk'.buildPackage {
@@ -35,19 +60,11 @@
         };
 
         devShell = pkgs.mkShell {
-          inherit cargoDeps;
           nativeBuildInputs = with pkgs; [
-            bacon
+            wrappedCargo
             trunk
             rust-analyzer
-            rustPlatform.cargoSetupHook
-            (pkgs.fenix.stable.withComponents [
-              "cargo"
-              "clippy"
-              "rust-src"
-              "rustc"
-              "rustfmt"
-            ])
+            wasmToolchain
           ];
         };
       }
